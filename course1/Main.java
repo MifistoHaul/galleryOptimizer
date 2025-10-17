@@ -1,3 +1,4 @@
+package course1;
 import model.Photo;
 import service.GalleryOptimizer;
 
