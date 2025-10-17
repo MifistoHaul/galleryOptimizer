@@ -8,7 +8,6 @@ public class PhotoMetadata {
     private int width;
     private int height;
 
-    // Конструкторы, геттеры, сеттеры, equals, hashCode
     public PhotoMetadata(LocalDateTime dateTaken, long fileSize, int width, int height) {
         this.dateTaken = dateTaken;
         this.fileSize = fileSize;
@@ -18,6 +17,9 @@ public class PhotoMetadata {
 
     // Геттеры
     public LocalDateTime getDateTaken() { return dateTaken; }
+    public long getFileSize() { return fileSize; }
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
 
     @Override
     public boolean equals(Object o) {
@@ -37,11 +39,7 @@ public class PhotoMetadata {
 
     @Override
     public String toString() {
-        return "Metadata{" +
-                "dateTaken=" + dateTaken +
-                ", fileSize=" + fileSize +
-                ", width=" + width +
-                ", height=" + height +
-                '}';
+        return String.format("Metadata{dateTaken=%s, size=%dx%d, fileSize=%d KB}",
+                dateTaken, width, height, fileSize / 1024);
     }
 }

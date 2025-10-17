@@ -3,6 +3,8 @@ package service;
 import model.Photo;
 import model.PhotoMetadata;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
@@ -19,7 +21,11 @@ public class MetadataProcessor {
         for (Path path : imagePaths) {
             try {
                 PhotoMetadata metadata = extractMetadata(path);
-                photos.add(new Photo(path, metadata));
+                if (metadata != null) {
+                    photos.add(new Photo(path, metadata));
+                    System.out.println("Загружено: " + path.getFileName() +
+                            " | Размер: " + metadata.getWidth() + "x" + metadata.getHeight());
+                }
             } catch (Exception e) {
                 System.err.println("Ошибка загрузки метаданных для " + path + ": " + e.getMessage());
             }
@@ -29,8 +35,7 @@ public class MetadataProcessor {
 
     private PhotoMetadata extractMetadata(Path filePath) {
         try {
-            // В реальном приложении здесь используется библиотека, например, Apache Sanselan или ExifTool
-            // Для демонстрации используем базовые атрибуты файла
+            // Базовые атрибуты файла
             BasicFileAttributes attrs = Files.readAttributes(filePath, BasicFileAttributes.class);
 
             LocalDateTime dateTaken = LocalDateTime.ofInstant(
@@ -40,16 +45,45 @@ public class MetadataProcessor {
 
             long fileSize = attrs.size();
 
-            // Заглушка для размеров изображения
-            // В реальности нужно использовать ImageIO или аналоги
-            int width = 0;
-            int height = 0;
+            // РЕАЛЬНОЕ получение размеров изображения
+            int[] dimensions = extractImageDimensions(filePath);
+            int width = dimensions[0];
+            int height = dimensions[1];
 
             return new PhotoMetadata(dateTaken, fileSize, width, height);
 
         } catch (Exception e) {
             System.err.println("Ошибка извлечения метаданных для " + filePath + ": " + e.getMessage());
-            return null;
+            return createFallbackMetadata(filePath);
+        }
+    }
+
+    private int[] extractImageDimensions(Path filePath) {
+        try {
+            // Используем ImageIO для получения реальных размеров изображения
+            BufferedImage image = ImageIO.read(filePath.toFile());
+            if (image != null) {
+                return new int[]{image.getWidth(), image.getHeight()};
+            } else {
+                System.err.println("Не удалось прочитать изображение: " + filePath);
+                return new int[]{0, 0};
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка получения размеров для " + filePath + ": " + e.getMessage());
+            return new int[]{0, 0};
+        }
+    }
+
+    private PhotoMetadata createFallbackMetadata(Path filePath) {
+        try {
+            BasicFileAttributes attrs = Files.readAttributes(filePath, BasicFileAttributes.class);
+            LocalDateTime fallbackDate = LocalDateTime.ofInstant(
+                    attrs.lastModifiedTime().toInstant(),
+                    ZoneId.systemDefault()
+            );
+            return new PhotoMetadata(fallbackDate, attrs.size(), 0, 0);
+        } catch (Exception e) {
+            return new PhotoMetadata(null, 0, 0, 0);
         }
     }
 }
